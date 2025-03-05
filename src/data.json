@@ -1,0 +1,31 @@
+[
+  {
+    "group": "Development",
+    "links": [
+      {
+        "title": "React Documents",
+        "url": "https://react.dev",
+        "logo": "https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg",
+        "id": "2sa74ju4swc"
+      },
+      {
+        "title": "Node.js",
+        "url": "https://nodejs.org",
+        "logo": "https://nodejs.org/static/images/logo.svg",
+        "id": "2sa74ju4swd"
+      }
+    ]
+  },
+  
+  {
+    "group": "Settings",
+    "links": [
+      {
+        "title": "Background Image",
+        "url": "background.jpg",
+        "logo": ""
+      }
+    ]
+  }
+  
+]

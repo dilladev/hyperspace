@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  hyperspace:
+    image: dilladev/hyperspace:latest
+    restart: always
+    ports:
+      - "3000:80"
+    volumes:
+      - ./src/data.json:/usr/share/nginx/html/assets/data.json:ro
+    environment:
+      - NODE_ENV=production
