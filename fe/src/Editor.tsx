@@ -16,6 +16,7 @@ interface Link {
   imageurl: string
   notes: string
   group_id: string
+  orderby: number
 }
 
 // Define the interface for a Group object
@@ -134,18 +135,11 @@ const Editor: React.FC<EditorProps> = ({ data, onClose, onDataUpdate }) => {
   }
 
   // Function to update a link
-  const updateLink = useCallback(
-    async (groupId: number, linkId: string, field: string, value: string) => {
+  const updateLink = 
+    async (groupId: number, linkId: string, title: string, linkUrl: string, imageurl: string, notes: string, orderby: number) => {
 
-      console.log("field: " + field + " value: " + value)
-      // Check if the function is already running
-      if (isUpdateLinkRunning.current) {
-        console.log('updateLink already running, skipping')
-        //return
-      }
-
-      // Set the ref to true to indicate the function is running
-      isUpdateLinkRunning.current = true
+     
+      
 
       setEditorData((prevData) => {
         const updatedData = prevData.map((group) => {
@@ -154,7 +148,11 @@ const Editor: React.FC<EditorProps> = ({ data, onClose, onDataUpdate }) => {
               if (link.id === linkId) {
                 return {
                   ...link,
-                  [field]: value,
+                  ['title']: title,
+                  ['link']: linkUrl,
+                  ['imageurl']: imageurl,
+                  ['notes']: notes,
+                  ['orderby']: orderby,
                 }
               }
               return link
@@ -175,7 +173,11 @@ const Editor: React.FC<EditorProps> = ({ data, onClose, onDataUpdate }) => {
           // Prepare the update data
           const updateData = {
             ...linkToUpdate,
-            [field]: value,
+            ['title']: title,
+            ['link']: linkUrl,
+            ['imageurl']: imageurl,
+            ['notes']: notes,
+            ['orderby']: orderby,
           }
 
           // Make the API call to update the link
@@ -202,9 +204,8 @@ const Editor: React.FC<EditorProps> = ({ data, onClose, onDataUpdate }) => {
         // Set the ref to false to indicate the function has completed
         isUpdateLinkRunning.current = false
       }
-    },
-    [setEditorData, editorData],
-  )
+  
+    }
 
   // Function to delete a group
   const deleteGroup = async (groupId: number) => {

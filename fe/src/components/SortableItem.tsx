@@ -7,10 +7,10 @@ import 'react-quill/dist/quill.snow.css'
 import axios from 'axios'
 interface SortableItemProps {
   id: string
-  link: { id: string; title: string; link: string; imageurl: string; notes: string }
+  link: { id: string; title: string; link: string; imageurl: string; notes: string, orderby: number }
   groupIndex: string
   deleteLink: (linkId: string) => void
-  updateLink: (groupIndex: string, linkId: string, field: string, value: string) => void
+  updateLink: (groupIndex: string, linkId: string, title: string, link: string, imageurl: string, notes: string, orderby: number) => void
   editingLinkId: string | null
   setEditingLinkId: React.Dispatch<React.SetStateAction<string | null>>
 }
@@ -29,6 +29,7 @@ const SortableItem: React.FC<SortableItemProps> = ({
   const [url, setUrl] = useState(link.link)
   const [imageUrl, setImageUrl] = useState(link.imageurl)
   const [notes, setNotes] = useState(link.notes)
+  const [orderby, setOrderBy] = useState(link.orderby)
   const [isEditing, setIsEditing] = useState(false)
   const itemRef = useRef(null)
   const [file, setFile] = useState<File|null>(null);
@@ -51,12 +52,11 @@ const SortableItem: React.FC<SortableItemProps> = ({
     if (file !== null) {
       formData.append('file', file);
       const uploadResponse = await axios.post(`/upload`, formData)
-      updateLink(groupIndex, link.id, 'imageurl', uploadResponse.data.file.filename)
+      setImageUrl(uploadResponse.data.file.filename)
     }
     console.log("Notes" + notes)
-    updateLink(groupIndex, link.id, 'title', title)
-    updateLink(groupIndex, link.id, 'link', url)
-    updateLink(groupIndex, link.id, 'notes', notes)
+    await updateLink(groupIndex, link.id, title, url, imageUrl, notes, orderby)
+ 
     setIsEditing(false)
     setEditingLinkId(null)
   }

@@ -33,6 +33,11 @@ export default defineConfig(({ mode }) => {
           target: `http://localhost:${env.VITE_API_PORT}`,
           changeOrigin: true,
         }
+        ,
+        '/uploads': {
+          target: `http://localhost:${env.VITE_API_PORT}`,
+          changeOrigin: true,
+        }
       }
     }
   }

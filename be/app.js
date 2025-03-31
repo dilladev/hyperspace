@@ -21,8 +21,10 @@ app.use(express.json());
 // Function to run database migrations
 async function runMigrations() {
   try {
-    const migrationFile = fs.readFileSync('migrations/add_notes_column.sql', 'utf8');
-    await pool.query(migrationFile);
+    const migrationNotes = fs.readFileSync('migrations/add_notes_column.sql', 'utf8');
+    await pool.query(migrationNotes);
+    const migrationOrder = fs.readFileSync('migrations/add_order_columns.sql', 'utf8');
+    await pool.query(migrationOrder);
     console.log('Database migrations completed.');
   } catch (err) {
     console.error('Migration failed:', err);
@@ -70,9 +72,9 @@ app.get('/groups', async (req, res) => {
 
 
 app.post('/groups', async (req, res) => {
-  const { title } = req.body;
+  const { title, orderby } = req.body;
   try {
-    const result = await pool.query('INSERT INTO groups (title) VALUES ($1) RETURNING *', [title]);
+    const result = await pool.query('INSERT INTO groups (title,orderby) VALUES ($1, $2) RETURNING *', [title, orderby]);
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -96,9 +98,9 @@ app.get('/groups/:id', async (req, res) => {
 
 app.put('/groups/:id', async (req, res) => {
   const { id } = req.params;
-  const { title } = req.body;
+  const { title, orderby } = req.body;
   try {
-    const result = await pool.query('UPDATE groups SET title = $1 WHERE id = $2 RETURNING *', [title, id]);
+    const result = await pool.query('UPDATE groups SET title = $1, orderby = $2 WHERE id = $3 RETURNING *', [title, orderby, id,]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Group not found' });
     }
@@ -177,7 +179,7 @@ app.put('/configuration/:id', async (req, res) => {
 // API endpoints for links
 app.get('/links', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM links');
+    const result = await pool.query('SELECT * FROM links ORDER BY orderby');
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -186,9 +188,9 @@ app.get('/links', async (req, res) => {
 });
 
 app.post('/links', async (req, res) => {
-  const { group_id, title, link, imageurl, notes } = req.body;
+  const { group_id, title, link, imageurl, notes, orderby } = req.body;
   try {
-    const result = await pool.query('INSERT INTO links (group_id, title, link, imageurl, notes) VALUES ($1, $2, $3, $4, $5) RETURNING *', [group_id, title, link, imageurl, notes]);
+    const result = await pool.query('INSERT INTO links (group_id, title, link, imageurl, notes, orderby) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [group_id, title, link, imageurl, notes, orderby]);
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -212,9 +214,9 @@ app.get('/links/:id', async (req, res) => {
 
 app.put('/links/:id', async (req, res) => {
   const { id } = req.params;
-  const { group_id, title, link, imageurl, notes } = req.body;
+  const { group_id, title, link, imageurl, notes, orderby } = req.body;
   try {
-    const result = await pool.query('UPDATE links SET group_id = $1, title = $2, link = $3, imageurl = $4, notes = $5 WHERE id = $6 RETURNING *', [group_id, title, link, imageurl, notes, id]);
+    const result = await pool.query('UPDATE links SET group_id = $1, title = $2, link = $3, imageurl = $4, notes = $5, orderby = $6 WHERE id = $7 RETURNING *', [group_id, title, link, imageurl, notes, orderby, id]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Link not found' });
     }

@@ -125,6 +125,28 @@ const SortableGroup: React.FC<SortableGroupProps> = ({ id, group, groupIndex, de
     setShowNewLinkInputs(!showNewLinkInputs)
   }
 
+  // Function to toggle the visibility of the new link inputs
+  const saveSort =  (group: any) => {
+    group.links.forEach((link, index) => {
+      console.log(`Link ${index}:`, link);
+      const updateData = {
+        ...link,
+        ['title']: link.title,
+        ['link']: link.link,
+        ['imageurl']: link.imageurl,
+        ['notes']: link.notes,
+        ['orderby']: index,
+      }
+      const response =  fetch(`/links/${link.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      })
+    });
+  }
+
   // Handler for drag end event
   const onDragEnd = (event: any, groupIndex: number) => {
     const { active, over } = event
@@ -144,6 +166,7 @@ const SortableGroup: React.FC<SortableGroupProps> = ({ id, group, groupIndex, de
     updatedLinks.splice(oldIndex, 1) // Remove the item at the old index
     updatedLinks.splice(newIndex, 0, group.links[oldIndex]) // Insert the item at the new index
     updatedData[groupIndex].links = updatedLinks
+    saveSort(group)
     setEditorData(updatedData)
   }
 
