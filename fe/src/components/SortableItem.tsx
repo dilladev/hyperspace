@@ -37,8 +37,7 @@ const SortableItem: React.FC<SortableItemProps> = ({
     transform: CSS.Transform.toString(transform),
     transition,
   }
-  const backendPort = import.meta.env.VITE_API_PORT;
-  const backendUrl = `${window.location.protocol}//${window.location.hostname}:${backendPort}`;
+
   useEffect(() => {
     if (editingLinkId === link.id) {
       setIsEditing(true)
@@ -51,7 +50,7 @@ const SortableItem: React.FC<SortableItemProps> = ({
     const formData = new FormData();
     if (file !== null) {
       formData.append('file', file);
-      const uploadResponse = await axios.post(`${backendUrl}/upload`, formData)
+      const uploadResponse = await axios.post(`/upload`, formData)
       updateLink(groupIndex, link.id, 'imageurl', uploadResponse.data.file.filename)
     }
     console.log("Notes" + notes)
