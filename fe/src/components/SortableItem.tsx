@@ -53,9 +53,12 @@ const SortableItem: React.FC<SortableItemProps> = ({
       formData.append('file', file);
       const uploadResponse = await axios.post(`/upload`, formData)
       setImageUrl(uploadResponse.data.file.filename)
+      updateLink(groupIndex, link.id, title, url, uploadResponse.data.file.filename, notes, orderby)
     }
-    console.log("Notes" + notes)
-    await updateLink(groupIndex, link.id, title, url, imageUrl, notes, orderby)
+    else{
+      updateLink(groupIndex, link.id, title, url, imageUrl, notes, orderby)
+    }
+    
  
     setIsEditing(false)
     setEditingLinkId(null)
@@ -92,7 +95,7 @@ const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Title"
-              className="bg-gray-600 text-white rounded-md p-1 mr-1 w-20"
+              className="bg-gray-600 text-white rounded-md p-1 mr-1 w-full"
             />
           ) : (
             <span className="text-white font-semibold">{link.title}</span>

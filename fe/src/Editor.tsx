@@ -194,10 +194,8 @@ const Editor: React.FC<EditorProps> = ({ data, onClose, onDataUpdate }) => {
           }
 
           const result = await response.json()
-          console.log('Link updated successfully:', result)
-        } else {
-          console.log('Group or link not found.')
-        }
+          
+        } 
       } catch (error) {
         console.error('Error updating link:', error)
       } finally {
@@ -231,7 +229,6 @@ const Editor: React.FC<EditorProps> = ({ data, onClose, onDataUpdate }) => {
   // Function to handle the save of the editor data
   const handleSave = async () => {
     try {
-      console.log(editorData)
       const response = await fetch('/groups', {
         method: 'PUT',
         headers: {
@@ -243,7 +240,6 @@ const Editor: React.FC<EditorProps> = ({ data, onClose, onDataUpdate }) => {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       const result = await response.json()
-      console.log('Data saved successfully:', result)
       onDataUpdate(editorData)
       onClose()
     } catch (error) {

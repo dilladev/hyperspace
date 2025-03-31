@@ -36,7 +36,7 @@ interface SortableGroupProps {
   setShowConfirmationDialog: any
   editorData: Group[]
   setEditorData: any
-  updateLink: (groupIndex: number, linkId: string, field: string, value: string) => void
+  updateLink: (groupIndex: string, linkId: string, title: string, link: string, imageurl: string, notes: string, orderby: number) => void
   editingLinkId: string | null
   setEditingLinkId: (linkId: string | null) => void
   moveGroupUp: (index: number) => void
@@ -128,7 +128,6 @@ const SortableGroup: React.FC<SortableGroupProps> = ({ id, group, groupIndex, de
   // Function to toggle the visibility of the new link inputs
   const saveSort =  (group: any) => {
     group.links.forEach((link, index) => {
-      console.log(`Link ${index}:`, link);
       const updateData = {
         ...link,
         ['title']: link.title,
@@ -321,15 +320,7 @@ const SortableGroup: React.FC<SortableGroupProps> = ({ id, group, groupIndex, de
             onChange={(e) => handleInputChange(e, groupIndex)}
             placeholder="URL"
             className="bg-gray-700 text-white rounded-md p-2 mb-2"
-          />
-          <input
-            type="text"
-            name="imageurl"
-            value={newLink.imageurl}
-            onChange={(e) => handleInputChange(e, groupIndex)}
-            placeholder="Logo URL"
-            className="bg-gray-700 text-white rounded-md p-2 mb-2"
-          />
+          />          
           <input
             type="file"
             name="file"

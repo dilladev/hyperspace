@@ -27,6 +27,8 @@ services:
       DB_NAME: hyperspace
       DB_PASSWORD: your_password
       DB_PORT: 5432
+    volumes:
+      - ./uploads:/uploads
     depends_on:
       - db
 volumes:
