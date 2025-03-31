@@ -1,0 +1,34 @@
+services:
+  fe:
+    image: dilladev/hyperspacefe:1.0
+    restart: always
+    ports:
+      - "3002:80"
+    environment:
+      - NODE_ENV=production  
+  db:
+    image: postgres:latest
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: hyperspace
+      POSTGRES_PASSWORD: your_password
+      POSTGRES_DB: hyperspace
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  be:
+    image: dilladev/hyperspacebe:1.0
+    ports:
+      - "3003:3000"
+    environment:
+      DB_USER: hyperspace
+      DB_HOST: db
+      DB_NAME: hyperspace
+      DB_PASSWORD: your_password
+      DB_PORT: 5432
+    depends_on:
+      - db
+volumes:
+  db_data:
