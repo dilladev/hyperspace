@@ -17,11 +17,10 @@ services:
       POSTGRES_DB: hyperspace
     volumes:
       - db_data:/var/lib/postgresql/data
-
   be:
     image: dilladev/hyperspacebe:1.0
     ports:
-      - "3003:3000"
+      - "3003:3003"
     environment:
       DB_USER: hyperspace
       DB_HOST: db
