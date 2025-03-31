@@ -34,7 +34,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                 className="block bg-black/50 rounded-md p-4 mb-2 border border-gray-700 hover:bg-black/40 transition-colors duration-200"
               >
                 <div className="flex">
-                  <img src={`/uploads/` + link.imageurl} alt={`${link.title} Logo`} className="w-12 h-12 mr-2" />
+                  <img src={`/uploads/` + link.imageurl} alt={`${link.title} Logo`} className="w-12 h-auto mr-2" />
                   <div>
                     <h3 className="text-lg font-semibold text-white">{link.title}</h3>
                     <p className="text-sm text-gray-400">{link.link}</p>
