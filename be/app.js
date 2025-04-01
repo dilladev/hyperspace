@@ -66,7 +66,7 @@ app.get('/groups', async (req, res) => {
     const groupsResult = await pool.query('SELECT * FROM groups ORDER BY orderby');
     const groups = groupsResult.rows;
 
-    const linksResult = await pool.query('SELECT * FROM links ORDER BY'); // Note: incomplete ORDER BY
+    const linksResult = await pool.query('SELECT * FROM links ORDER BY orderby'); // Note: incomplete ORDER BY
     const links = linksResult.rows;
 
     // Attach links to their corresponding groups
@@ -146,6 +146,16 @@ app.delete('/groups/:id', async (req, res) => {
   }
 });
 
+// Delete all groups
+app.delete('/groups', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM groups');
+    res.json({ message: 'All groups deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete groups' });
+  }
+});
+
 /* ===========================
    CONFIGURATIONS API ENDPOINTS
    =========================== */
@@ -207,6 +217,16 @@ app.put('/configuration/:id', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to update configuration' });
+  }
+});
+
+// Delete all configurations (optional)
+app.delete('/configurations', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM configurations');
+    res.json({ message: 'All configurations deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete configurations' });
   }
 });
 
@@ -286,6 +306,16 @@ app.delete('/links/:id', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to delete link' });
+  }
+});
+
+// Delete all links
+app.delete('/links', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM links');
+    res.json({ message: 'All links deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete links' });
   }
 });
 

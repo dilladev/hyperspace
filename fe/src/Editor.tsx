@@ -2,12 +2,14 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { FaFileExport, FaSave, FaTimes, FaPlus } from 'react-icons/fa'
+import { FaFileExport,FaFileImport , FaSave, FaTimes, FaPlus } from 'react-icons/fa'
 import { Switch } from '@headlessui/react'
 import SortableGroup from './components/SortableGroup'
 import ConfirmationDialog from './components/ConfirmationDialog'
 import ReactQuill from 'react-quill'
 import 'react-quill/dist/quill.snow.css'
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
 // Define the interface for a Link object
 interface Link {
@@ -118,18 +120,135 @@ const Editor: React.FC<EditorProps> = ({ data, onClose, onDataUpdate }) => {
   }
 
   // Export the editor data as a downloadable JSON file
-  const handleExport = () => {
-    const jsonString = JSON.stringify(editorData, null, 2)
-    const blob = new Blob([jsonString], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'data.json'
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
+  const handleExport = async () => {
+   
+      const zip = new JSZip();
+    
+      // Add the JSON file
+      const jsonString = JSON.stringify(editorData, null, 2);
+      zip.file('data.json', jsonString);
+    
+      // Collect all image URLs used in editorData
+      const imageUrls = new Set<string>();
+      editorData.forEach(group => {
+        group.links.forEach(link => {
+          if (link.imageurl) {
+            imageUrls.add(link.imageurl);
+          }
+        });
+      });
+    
+      // Fetch and add each image to the zip
+      const imageFetchPromises = Array.from(imageUrls).map(async (filename) => {
+        try {
+          const response = await fetch(`/uploads/${filename}`);
+          const blob = await response.blob();
+          zip.file(`images/${filename}`, blob);
+        } catch (err) {
+          console.warn(`Failed to fetch image: ${filename}`, err);
+        }
+      });
+    
+      await Promise.all(imageFetchPromises);
+    
+      // Generate the zip file and trigger download
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+      // Generate formatted timestamp
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      const time = now.toTimeString().split(' ')[0].replace(/:/g, ''); // HHMMSS
+      saveAs(zipBlob, `${yyyy}${mm}${dd}${time}-data-hyperspace.zip`);
+    };
+  
+
+  const importZip = async (file: File) => {
+    const zip = new JSZip();
+  
+    try {
+      // Load the zip file
+      const contents = await zip.loadAsync(file);
+  
+      // Read and parse the JSON data
+      const jsonFile = contents.file('data.json');
+      if (!jsonFile) throw new Error('data.json not found in zip');
+  
+      const jsonText = await jsonFile.async('string');
+      const parsedData = JSON.parse(jsonText);
+
+      // clean out the data
+      await fetch('/links', { method: 'DELETE' });
+      await fetch('/groups', { method: 'DELETE' });
+      await fetch('/configurations', { method: 'DELETE' });
+
+      // Extract and upload images
+      const imageUploads: { [originalName: string]: string } = {};
+  
+      const imageFiles = Object.keys(contents.files).filter((filename) =>
+        filename.startsWith('images/')
+      );
+  
+      for (const imagePath of imageFiles) {
+        const imageName = imagePath.replace('images/', '');
+        const imageBlob = await contents.file(imagePath)?.async('blob');
+  
+        if (imageBlob) {
+          const formData = new FormData();
+          formData.append('file', imageBlob, imageName);
+  
+          const response = await fetch('/upload', {
+            method: 'POST',
+            body: formData,
+          });
+  
+          const result = await response.json();
+          imageUploads[imageName] = result.file.filename;
+        }
+      }
+  
+      // Import groups and links into the database
+      for (const group of parsedData) {
+        const groupRes = await fetch('/groups', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ title: group.title, orderby: group.orderby || 0 }),
+        });
+  
+        const newGroup = await groupRes.json();
+  
+        // Upload links for each group
+        for (const link of group.links) {
+          await fetch('/links', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              group_id: newGroup.id,
+              title: link.title,
+              link: link.link,
+              imageurl: imageUploads[link.imageurl] || '', // Use updated image filename
+              notes: link.notes,
+              orderby: link.orderby || 0,
+            }),
+          });
+        }
+      }
+      const response = await fetch('/groups');
+      const updatedData = await response.json();
+      setEditorData(updatedData)
+      alert('Import completed successfully!');
+
+
+    } catch (error) {
+      console.error('Import failed:', error);
+      alert('Import failed. Check the console for details.');
+    }
+  };
 
   // Update a single link's properties both locally and via API
   const updateLink = async (
@@ -368,10 +487,33 @@ const Editor: React.FC<EditorProps> = ({ data, onClose, onDataUpdate }) => {
 
         {/* Footer with actions */}
         <div className="flex justify-between sticky bottom-0 bg-gray-800 pb-5 pt-5">
-          <button onClick={handleExport} className="bg-blue-600 text-white rounded-md p-2 hover:bg-blue-700 flex items-center">
-            <FaFileExport className="mr-2" />
-            Export JSON
-          </button>
+          <div>
+            <button onClick={handleExport} className="bg-blue-600 text-white rounded-md p-2 hover:bg-blue-700 flex items-center inline-flex mr-2">
+              <FaFileExport className="mr-2" />
+              Export
+            </button>
+          
+            <div className="relative inline-block">
+              <input
+                type="file"
+                accept=".zip"
+                id="fileUpload"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    importZip(e.target.files[0]); // your import function
+                  }
+                }}
+                className="hidden"
+              />
+              <label
+                htmlFor="fileUpload"
+                className="bg-blue-600 text-white rounded-md px-4 py-2 cursor-pointer hover:bg-blue-700 transition-colors duration-200 inline-flex items-center"
+              >
+                <FaFileImport className="mr-2" />
+                Import
+              </label>
+          </div>
+        </div>
           <div className="flex">
             <button onClick={handleClose} className="bg-gray-600 text-white rounded-md p-2 hover:bg-gray-700 flex items-center">
               <FaTimes className="mr-2" />
