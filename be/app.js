@@ -50,11 +50,11 @@ async function startServer() {
 app.get('/groups', async (req, res) => {
   try {
     // Fetch all groups
-    const groupsResult = await pool.query('SELECT * FROM groups');
+    const groupsResult = await pool.query('SELECT * FROM groups ORDER BY orderby');
     const groups = groupsResult.rows;
     
     // Fetch all links
-    const linksResult = await pool.query('SELECT * FROM links');
+    const linksResult = await pool.query('SELECT * FROM links ORDER BY orderby');
     const links = linksResult.rows;
 
     // Attach links to their respective groups

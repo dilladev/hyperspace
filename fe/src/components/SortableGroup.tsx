@@ -242,26 +242,27 @@ const SortableGroup: React.FC<SortableGroupProps> = ({ id, group, groupIndex, de
             <h3 className="text-lg mb-5 font-semibold text-white" style={{ cursor: isSortable ? 'grab' : 'auto' }}>
               {group.title}
             </h3>
-            {isSortable && (
+            {!isSortable && (
+              <div className="flex">
+                
+              </div>
+            )}
+            {!isSortable && !isConfigurationGroup && (
               <div className="flex">
                 <button
                   onClick={() => moveGroupUp(groupIndex)}
-                  disabled={isFirst}
-                  className="text-gray-400 hover:text-white disabled:opacity-50"
+                 
+                  className="text-gray-400 hover:text-white disabled:opacity-50 mr-2"
                 >
                   <FaArrowUp />
                 </button>
                 <button
                   onClick={() => moveGroupDown(groupIndex)}
-                  disabled={isLast}
-                  className="text-gray-400 hover:text-white disabled:opacity-50"
+                
+                  className="text-gray-400 hover:text-white disabled:opacity-50 mr-2"
                 >
                   <FaArrowDown />
                 </button>
-              </div>
-            )}
-            {!isSortable && !isConfigurationGroup && (
-              <div className="flex">
                 <button
                   onClick={() => setEditingGroupId(group.id)}
                   className="bg-blue-600 text-white rounded-md p-2 hover:bg-blue-700 flex items-center w-8 h-8 justify-center mr-2 mb-2"

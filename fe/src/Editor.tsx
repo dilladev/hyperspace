@@ -91,6 +91,9 @@ const Editor: React.FC<EditorProps> = ({ data, onClose, onDataUpdate }) => {
         const newGroups = arrayMove(prev, oldIndex, newIndex)
         return newGroups
       })
+
+
+      
     },
     [editorData, setEditorData],
   )
@@ -287,10 +290,13 @@ const Editor: React.FC<EditorProps> = ({ data, onClose, onDataUpdate }) => {
 
   // Function to move a group up
   const moveGroupUp = (index: number) => {
+    console.log("moving group")
     if (index > 0) {
       const newGroups = arrayMove([...editorData], index, index - 1)
       setEditorData(newGroups)
+      saveGroupSort(newGroups);
     }
+   
   }
 
   // Function to move a group down
@@ -298,29 +304,33 @@ const Editor: React.FC<EditorProps> = ({ data, onClose, onDataUpdate }) => {
     if (index < editorData.length - 1) {
       const newGroups = arrayMove([...editorData], index, index + 1)
       setEditorData(newGroups)
+      saveGroupSort(newGroups);
     }
   }
 
+  const saveGroupSort = (newGroups:any) => {
+    newGroups.forEach((group, index) => {
+      const updateData = {
+        ...group,
+        ['title']: group.title,
+        ['orderby']: index,
+      }
+      const response =  fetch(`/groups/${group.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      })
+    });
+  }
   // Render the Editor
   return (
     <div className="fixed top-0 left-0 w-full h-full bg-black/50 flex justify-center items-center z-50">
       <div className="bg-gray-800 rounded-md p-4 max-w-3xl w-full mx-4 h-[90vh] overflow-auto custom-scroll pb-0">
-        <h2 className="text-xl font-bold mb-4 text-white">JSON Editor</h2>
+        <h2 className="text-xl font-bold mb-4 text-white">HyperSpace Editor</h2>
 
-        <div className="mb-4 flex justify-between items-center">
-          <h3 className="text-lg font-semibold mb-2 text-white"></h3>
-          <div className="flex items-center">
-            <span className="text-white mr-2">Enable Sorting</span>
-            <Switch
-              checked={isSortable}
-              onChange={toggleSortable}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full ${isSortable ? 'bg-green-600' : 'bg-gray-600'}`}
-            >
-              <span className="sr-only">Enable notifications</span>
-              <span className={`inline-block h-5 w-5 transform rounded-full bg-gray-200 transition-transform ${isSortable ? 'translate-x-6' : 'translate-x-1'}`}></span>
-            </Switch>
-          </div>
-        </div>
+        
 
         <div className="mb-4 flex">
           <input
