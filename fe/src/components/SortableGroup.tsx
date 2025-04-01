@@ -1,3 +1,4 @@
+// Import necessary modules and components
 import React, { useState, useCallback, useEffect, ChangeEvent } from 'react'
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -6,7 +7,8 @@ import { CSS } from '@dnd-kit/utilities'
 import { FaPlus, FaTrash, FaEdit, FaArrowUp, FaArrowDown, FaSave, FaTimes } from 'react-icons/fa'
 import SortableItem from './SortableItem'
 import axios from 'axios'
-// Define the interface for a Link object
+
+// Define interface for a single Link object
 interface Link {
   id: string
   title: string
@@ -15,14 +17,14 @@ interface Link {
   group_id: string
 }
 
-// Define the interface for a Group object
+// Define interface for a Group of links
 interface Group {
   id: string
   title: string
   links: Link[]
 }
 
-// Interface for SortableGroup props
+// Props interface for SortableGroup component
 interface SortableGroupProps {
   id: number
   group: Group
@@ -45,41 +47,51 @@ interface SortableGroupProps {
   isLast: boolean
 }
 
-// SortableGroup component: Represents a group of links that can be sorted
-const SortableGroup: React.FC<SortableGroupProps> = ({ id, group, groupIndex, deleteGroup, editingGroupId, setEditingGroupId, handleGroupNameChange, handleGroupSaveClick, isSortable, setShowConfirmationDialog, editorData, setEditorData, updateLink, editingLinkId, setEditingLinkId, moveGroupUp, moveGroupDown, isFirst, isLast }) => {
-  // useSortable hook to enable drag and drop functionality
+// SortableGroup component: Represents a draggable and editable group section
+const SortableGroup: React.FC<SortableGroupProps> = ({
+  id, group, groupIndex, deleteGroup, editingGroupId, setEditingGroupId,
+  handleGroupNameChange, handleGroupSaveClick, isSortable, setShowConfirmationDialog,
+  editorData, setEditorData, updateLink, editingLinkId, setEditingLinkId,
+  moveGroupUp, moveGroupDown, isFirst, isLast
+}) => {
+
+  // Hook to enable drag and drop on the group
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: id, disabled: !isSortable })
+
+  // API base URL setup
   const backendPort = import.meta.env.VITE_API_PORT;
   const backendUrl = `${window.location.protocol}//${window.location.hostname}:${backendPort}`;
-  // Style for the group, including transform and transition for smooth dragging
+
+  // Styling for dragging animation
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    ...(isSortable ? { cursor: 'grab' } : {}), // Change cursor when sorting is enabled
+    ...(isSortable ? { cursor: 'grab' } : {}),
   }
 
-  // State for managing the new link input
+  // Local state for adding a new link
   const [newLink, setNewLink] = useState({ title: '', link: '', imageurl: '' })
-  // State to control the visibility of the new link inputs
   const [showNewLinkInputs, setShowNewLinkInputs] = useState<boolean>(false)
 
-  // Function to generate a unique ID
+  // Local state for file upload preview
+  const [file, setFile] = useState<File | null>(null)
+  const [preview, setPreview] = useState<string | null>(null)
+
+  // Generates a unique ID string
   const generateUniqueId = () => {
     return Math.random().toString(36).substring(2, 15)
   }
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null); // Function to add a new link to the group
+
+  // Adds a new link with uploaded image to the group
   const addLink = async () => {
     if (newLink.title.trim() !== '' && newLink.link.trim() !== '') {
       if (!file) return;
 
-    const formData = new FormData();
-    formData.append('file', file);
+      const formData = new FormData()
+      formData.append('file', file)
 
-    
+      const uploadResponse = await axios.post(`/upload`, formData)
 
-      const uploadResponse = await axios.post(`/upload`, formData);
-   
       try {
         const response = await fetch('/links', {
           method: 'POST',
@@ -94,7 +106,8 @@ const SortableGroup: React.FC<SortableGroupProps> = ({ id, group, groupIndex, de
           }),
         })
         const newLinkData = await response.json()
-        // Fetch the updated groups data after adding a new link
+
+        // Refresh the group data after adding a new link
         const fetchGroups = async () => {
           try {
             const response = await fetch('/groups')
@@ -107,26 +120,25 @@ const SortableGroup: React.FC<SortableGroupProps> = ({ id, group, groupIndex, de
 
         fetchGroups()
         setNewLink({ title: '', link: '', imageurl: '' })
-        setShowNewLinkInputs(false) // Hide the inputs after saving
+        setShowNewLinkInputs(false)
       } catch (error) {
         console.error('Error creating link:', error)
       }
-      
     }
   }
 
-  // Handler for input change in the new link form
+  // Updates local state as user types in new link inputs
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, groupIndex?: number) => {
     setNewLink({ ...newLink, [e.target.name]: e.target.value })
   }
 
-  // Function to toggle the visibility of the new link inputs
+  // Toggles the visibility of the link input fields
   const toggleNewLinkInputs = () => {
     setShowNewLinkInputs(!showNewLinkInputs)
   }
 
-  // Function to toggle the visibility of the new link inputs
-  const saveSort =  (group: any) => {
+  // Saves the sorting order of links within the group
+  const saveSort = (group: any) => {
     group.links.forEach((link, index) => {
       const updateData = {
         ...link,
@@ -136,51 +148,44 @@ const SortableGroup: React.FC<SortableGroupProps> = ({ id, group, groupIndex, de
         ['notes']: link.notes,
         ['orderby']: index,
       }
-      const response =  fetch(`/links/${link.id}`, {
+      fetch(`/links/${link.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(updateData),
       })
-    });
+    })
   }
 
-  // Handler for drag end event
+  // Handles link sorting via drag-and-drop
   const onDragEnd = (event: any, groupIndex: number) => {
     const { active, over } = event
-
-    if (!over) return
-
-    if (active.id === over.id) return
+    if (!over || active.id === over.id) return
 
     const oldIndex = group.links.findIndex((link) => link.id === active.id)
     const newIndex = group.links.findIndex((link) => link.id === over.id)
-
     if (oldIndex === -1 || newIndex === -1) return
 
     const updatedData = [...editorData]
-    // Create a copy of the links array for the specific group
     const updatedLinks = [...updatedData[groupIndex].links]
-    updatedLinks.splice(oldIndex, 1) // Remove the item at the old index
-    updatedLinks.splice(newIndex, 0, group.links[oldIndex]) // Insert the item at the new index
+    updatedLinks.splice(oldIndex, 1)
+    updatedLinks.splice(newIndex, 0, group.links[oldIndex])
     updatedData[groupIndex].links = updatedLinks
     saveSort(group)
     setEditorData(updatedData)
   }
 
-  // Check if the group is the configuration group
+  // Checks if the group is the "Settings" group
   const isConfigurationGroup = group.title === 'Settings'
 
+  // Deletes a link from a group
   const deleteLink = useCallback(
     async (linkId: string) => {
       setShowConfirmationDialog({ isOpen: false, message: '', onConfirm: () => {}, onCancel: () => {} })
       try {
-        await fetch(`/links/${linkId}`, {
-          method: 'DELETE',
-        })
+        await fetch(`/links/${linkId}`, { method: 'DELETE' })
 
-        // Fetch the updated groups data after deleting a link
         const fetchGroups = async () => {
           try {
             const response = await fetch('/groups')
@@ -198,24 +203,28 @@ const SortableGroup: React.FC<SortableGroupProps> = ({ id, group, groupIndex, de
     },
     [setEditorData, setShowConfirmationDialog],
   )
-  
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0] || null;
-    setFile(selectedFile);
 
-    if (selectedFile && selectedFile.type.startsWith('image/')) {
-      const objectUrl = URL.createObjectURL(selectedFile);
-      setPreview(objectUrl);
+  // Handles image file input and preview
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0] || null
+    setFile(selectedFile)
+
+    if (selectedFile?.type.startsWith('image/')) {
+      const objectUrl = URL.createObjectURL(selectedFile)
+      setPreview(objectUrl)
     } else {
-      setPreview(null);
+      setPreview(null)
     }
-  };
-  // Render the SortableGroup
+  }
+
+  // Render component
   return (
     <div ref={setNodeRef} style={style} {...(isSortable ? attributes : {})} {...(isSortable ? listeners : {})} key={groupIndex} className="mb-4 w-full">
+      {/* Group header area */}
       <div className="flex justify-between items-center w-full">
         {editingGroupId === group.id ? (
           <>
+            {/* Editable group name input */}
             <input
               type="text"
               value={group.title}
@@ -223,50 +232,30 @@ const SortableGroup: React.FC<SortableGroupProps> = ({ id, group, groupIndex, de
               className="bg-gray-700 text-white rounded-md p-2 w-1/2 mr-2 mb-2"
             />
             <div className="flex">
-              <button
-                onClick={() => handleGroupSaveClick(group.id)}
-                className="bg-green-600 text-white rounded-md p-2 hover:bg-green-700 flex items-center w-8 h-8 justify-center mr-2 mb-2"
-              >
+              <button onClick={() => handleGroupSaveClick(group.id)} className="bg-green-600 text-white rounded-md p-2 hover:bg-green-700 flex items-center w-8 h-8 justify-center mr-2 mb-2">
                 <FaSave />
               </button>
-              <button
-                onClick={() => setEditingGroupId(null)}
-                className="bg-gray-600 text-white rounded-md p-2 hover:bg-gray-700 flex items-center w-8 h-8 justify-center"
-              >
+              <button onClick={() => setEditingGroupId(null)} className="bg-gray-600 text-white rounded-md p-2 hover:bg-gray-700 flex items-center w-8 h-8 justify-center">
                 <FaTimes />
               </button>
             </div>
           </>
         ) : (
           <div className="flex justify-between items-center w-full">
+            {/* Display group name */}
             <h3 className="text-lg mb-5 font-semibold text-white" style={{ cursor: isSortable ? 'grab' : 'auto' }}>
               {group.title}
             </h3>
-            {!isSortable && (
-              <div className="flex">
-                
-              </div>
-            )}
             {!isSortable && !isConfigurationGroup && (
               <div className="flex">
-                <button
-                  onClick={() => moveGroupUp(groupIndex)}
-                 
-                  className="text-gray-400 hover:text-white disabled:opacity-50 mr-2"
-                >
+                {/* Group controls: move, edit, delete */}
+                <button onClick={() => moveGroupUp(groupIndex)} className="text-gray-400 hover:text-white disabled:opacity-50 mr-2">
                   <FaArrowUp />
                 </button>
-                <button
-                  onClick={() => moveGroupDown(groupIndex)}
-                
-                  className="text-gray-400 hover:text-white disabled:opacity-50 mr-2"
-                >
+                <button onClick={() => moveGroupDown(groupIndex)} className="text-gray-400 hover:text-white disabled:opacity-50 mr-2">
                   <FaArrowDown />
                 </button>
-                <button
-                  onClick={() => setEditingGroupId(group.id)}
-                  className="bg-blue-600 text-white rounded-md p-2 hover:bg-blue-700 flex items-center w-8 h-8 justify-center mr-2 mb-2"
-                >
+                <button onClick={() => setEditingGroupId(group.id)} className="bg-blue-600 text-white rounded-md p-2 hover:bg-blue-700 flex items-center w-8 h-8 justify-center mr-2 mb-2">
                   <FaEdit />
                 </button>
                 <button onClick={() => deleteGroup(group.id)} className="bg-red-600 text-white rounded-md p-2 hover:bg-red-700 flex items-center w-8 h-8 justify-center">
@@ -278,11 +267,11 @@ const SortableGroup: React.FC<SortableGroupProps> = ({ id, group, groupIndex, de
         )}
       </div>
 
+      {/* Drag-and-drop context for links */}
       <DndContext id={group.title} collisionDetection={closestCenter} onDragEnd={(e) => onDragEnd(e, groupIndex)}>
-      {group.links?.length ? (
-        <SortableContext items={group.links?.map((link) => link.id)} strategy={verticalListSortingStrategy}>
-          {group.links?.map((link: Link, linkIndex: number) => {
-            return (
+        {group.links?.length ? (
+          <SortableContext items={group.links.map((link) => link.id)} strategy={verticalListSortingStrategy}>
+            {group.links.map((link: Link, linkIndex: number) => (
               <SortableItem
                 key={link.id}
                 id={link.id}
@@ -296,14 +285,17 @@ const SortableGroup: React.FC<SortableGroupProps> = ({ id, group, groupIndex, de
                 setShowConfirmationDialog={setShowConfirmationDialog}
                 deleteLink={deleteLink}
               />
-            )
-          })}
-        </SortableContext>
+            ))}
+          </SortableContext>
         ) : null}
       </DndContext>
+
+      {/* Button to toggle add new link form */}
       <button onClick={toggleNewLinkInputs} className="bg-blue-600 text-white rounded-md p-2 hover:bg-blue-700 flex items-center whitespace-nowrap mb-2">
-        <FaPlus/>
+        <FaPlus />
       </button>
+
+      {/* New link form */}
       {showNewLinkInputs && (
         <div className="flex flex-col mb-2">
           <input
@@ -321,19 +313,19 @@ const SortableGroup: React.FC<SortableGroupProps> = ({ id, group, groupIndex, de
             onChange={(e) => handleInputChange(e, groupIndex)}
             placeholder="URL"
             className="bg-gray-700 text-white rounded-md p-2 mb-2"
-          />          
+          />
           <input
             type="file"
             name="file"
             placeholder="Upload Logo"
             className="bg-gray-700 text-white rounded-md p-2 mb-2"
-            onChange={handleFileChange} 
+            onChange={handleFileChange}
           />
           {preview && (
-        <div style={{ marginTop: 10,marginBottom: 10 }}>
-          <img src={preview} alt="Preview" width={50} />
-        </div>
-      )}
+            <div style={{ marginTop: 10, marginBottom: 10 }}>
+              <img src={preview} alt="Preview" width={50} />
+            </div>
+          )}
           <button onClick={() => addLink()} className="bg-green-600 text-white rounded-md p-2 hover:bg-green-700 flex items-center justify-center">
             <FaSave className="mr-2" />
             Save Link
