@@ -54,7 +54,7 @@ app.get('/groups', async (req, res) => {
     const groups = groupsResult.rows;
     
     // Fetch all links
-    const linksResult = await pool.query('SELECT * FROM links ORDER BY orderby');
+    const linksResult = await pool.query('SELECT * FROM links ORDER BY');
     const links = linksResult.rows;
 
     // Attach links to their respective groups
@@ -245,7 +245,7 @@ const storage = multer.diskStorage({
     cb(null, 'uploads/'); // save to /uploads
   },
   filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
+    cb(null, `${file.originalname}`);
   },
 });
 
