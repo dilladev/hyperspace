@@ -53,7 +53,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                   <img
                     src={`/uploads/` + link.imageurl}
                     alt={`${link.title} Logo`}
-                    className="h-auto max-h-12 object-contain mr-2"
+                    className="h-auto max-h-12 max-w-12 object-contain mr-2"
                   />
                   {/* Link details: title, URL, and notes */}
                   <div>
